@@ -91,19 +91,18 @@ Infrastructure:
 
 ## Project Structure
 
----
+```
 study-signal/
 │
 ├── src/
-│ ├── App.jsx
-│ ├── App.css
-│ └── main.jsx
+│   ├── App.jsx
+│   ├── App.css
+│   └── main.jsx
 │
 ├── index.html
 ├── package.json
 └── README.md
-
----
+```
 
 ## Future Improvements
 
