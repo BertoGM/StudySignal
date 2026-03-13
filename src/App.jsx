@@ -1,101 +1,96 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 import "./App.css";
+
+const coordinates = {
+  "Odegaard Library": [47.6565, -122.3107],
+  "Allen Library": [47.6559, -122.3080],
+  "HUB": [47.6553, -122.3054]
+};
+
+function getPinColor(crowd) {
+  if (crowd === "Quiet") return "green";
+  if (crowd === "Medium") return "yellow";
+  return "red";
+}
+
+function makeIcon(color) {
+  return new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+    shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+}
 
 function App() {
   const [spots, setSpots] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedSpot, setSelectedSpot] = useState("Odegaard Library");
-  const [selectedCrowd, setSelectedCrowd] = useState("Busy");
-  const [message, setMessage] = useState("");
+  const mapRef = useRef(null);
 
   const loadSpots = async () => {
-    try {
-      setLoading(true);
-
-      const res = await fetch("https://boxnk8ahob.execute-api.us-east-2.amazonaws.com/default/studySignalAPI");
-      const data = await res.json();
-
-      const sortedSpots = [...data].sort((a, b) => a.name.localeCompare(b.name));
-      setSpots(sortedSpots);
-    } catch (err) {
-      console.error(err);
-      setMessage("Could not load study spots.");
-    } finally {
-      setLoading(false);
-    }
+    const res = await fetch(
+      "https://boxnk8ahob.execute-api.us-east-2.amazonaws.com/default/studySignalAPI"
+    );
+    const data = await res.json();
+    setSpots(data);
   };
 
-  const submitReport = async () => {
-    try {
-      const res = await fetch(
-        "https://cwgw4qu43m.execute-api.us-east-2.amazonaws.com/default/report",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            name: selectedSpot,
-            crowd: selectedCrowd
-          })
-        }
-      );
+  useEffect(() => {
+    loadSpots();
+  }, []);
 
-      if (!res.ok) {
-        throw new Error("Failed to submit report");
+  useEffect(() => {
+    setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
       }
-
-      setMessage("Report submitted successfully!");
-      loadSpots();
-
-      setTimeout(() => {
-        setMessage("");
-      }, 2500);
-    } catch (err) {
-      console.error(err);
-      setMessage("Could not submit report.");
-    }
-  };
+    }, 100);
+  }, []);
 
   return (
     <div className="app">
       <h1>StudySignal</h1>
-      <p>Find a place to study.</p>
 
-      {message && <div className="message">{message}</div>}
-
-      <div className="form-section">
-        <h2>Submit Crowd Report</h2>
-
-        <label>Study Spot</label>
-        <select value={selectedSpot} onChange={(e) => setSelectedSpot(e.target.value)}>
-          <option>Odegaard Library</option>
-          <option>Allen Library</option>
-          <option>HUB</option>
-        </select>
-
-        <label>Crowd Level</label>
-        <select value={selectedCrowd} onChange={(e) => setSelectedCrowd(e.target.value)}>
-          <option>Quiet</option>
-          <option>Medium</option>
-          <option>Busy</option>
-        </select>
-
-        <button onClick={submitReport}>Submit Report</button>
+      <div className="legend">
+        <div className="legend-item">
+          <span className="dot green"></span> Quiet
+        </div>
+        <div className="legend-item">
+          <span className="dot yellow"></span> Medium
+        </div>
+        <div className="legend-item">
+          <span className="dot red"></span> Busy
+        </div>
       </div>
 
-      <div className="list-section">
-        <button onClick={loadSpots}>
-          {loading ? "Loading..." : "Load Study Spots"}
-        </button>
+      <div className="map-wrapper">
+        <MapContainer
+          center={[47.656, -122.308]}
+          zoom={16}
+          ref={mapRef}
+        >
+          <TileLayer
+            attribution="&copy; OpenStreetMap contributors"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
 
-        <ul>
           {spots.map((spot, index) => (
-            <li key={index}>
-              {spot.name} — {spot.crowd}
-            </li>
+            <Marker
+              key={index}
+              position={coordinates[spot.name]}
+              icon={makeIcon(getPinColor(spot.crowd))}
+            >
+              <Popup>
+                <b>{spot.name}</b>
+                <br />
+                Crowd Level: {spot.crowd}
+              </Popup>
+            </Marker>
           ))}
-        </ul>
+        </MapContainer>
       </div>
     </div>
   );
