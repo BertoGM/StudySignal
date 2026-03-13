@@ -52,16 +52,20 @@ Crowd levels:
 
 ---
 
-## Architecture
+## System Architecture
 
----
-React Frontend
-↓
+```
+Frontend (React)
+      │
+      ▼
 API Gateway
-↓
+      │
+      ▼
 AWS Lambda
-↓
+      │
+      ▼
 DynamoDB
+```
 
 The frontend sends requests to AWS API Gateway, which triggers Lambda functions that read or update data in DynamoDB.
 
