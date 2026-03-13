@@ -53,6 +53,8 @@ Crowd levels:
 ---
 
 ## Architecture
+
+---
 React Frontend
 ↓
 API Gateway
@@ -84,6 +86,8 @@ Infrastructure:
 ---
 
 ## Project Structure
+
+---
 study-signal/
 │
 ├── src/
